@@ -15,6 +15,47 @@ function printSection(id) {
     newWin.print();
 }
 
+// Scarica PDF di una sezione
+function downloadPDF(id, filename) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // cattura il div selezionato
+    const element = document.getElementById(id);
+    const clone = element.cloneNode(true);
+
+    // se c’è il barcode, converti in immagine
+    const svg = clone.querySelector("svg");
+    if(svg){
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const img = new Image();
+        const svgBlob = new Blob([svgData], {type:"image/svg+xml;charset=utf-8"});
+        const url = URL.createObjectURL(svgBlob);
+        img.onload = function(){
+            doc.text(filename, 20, 20);
+            doc.addImage(img, 'SVG', 20, 40, 160, 40);
+            const textElements = clone.querySelectorAll("p");
+            let y = 90;
+            textElements.forEach(p => {
+                doc.text(p.innerText, 20, y);
+                y += 10;
+            });
+            doc.save(filename + ".pdf");
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    } else {
+        doc.text(filename, 20, 20);
+        const textElements = clone.querySelectorAll("p");
+        let y = 40;
+        textElements.forEach(p => {
+            doc.text(p.innerText, 20, y);
+            y += 10;
+        });
+        doc.save(filename + ".pdf");
+    }
+}
+
 document.getElementById('raccomandataForm').addEventListener('submit', function(e){
     e.preventDefault();
 
