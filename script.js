@@ -16,7 +16,7 @@ function printSection(id) {
     newWin.print();
 }
 
-// 🔹 Scarica PDF (Accettazione, Etichetta, AR)
+// 🔹 Scarica PDF generico (Accettazione, AR)
 function downloadPDF(sectionId, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -35,6 +35,37 @@ function downloadPDF(sectionId, fileName) {
     });
 }
 
+// 🔹 Scarica PDF Etichetta con solo barcode e numero
+function downloadLabelPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+    const barcodeSVG = document.getElementById("barcode");
+    const codeText = document.getElementById("l_code").textContent;
+
+    const svgData = new XMLSerializer().serializeToString(barcodeSVG);
+    const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = function() {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const imgWidth = 100;
+        const imgHeight = 30;
+        const x = (pageWidth - imgWidth) / 2;
+        const y = 40;
+
+        doc.addImage(img, "SVG", x, y, imgWidth, imgHeight);
+
+        doc.setFontSize(16);
+        doc.text(codeText, pageWidth / 2, y + imgHeight + 10, { align: "center" });
+
+        doc.save("Etichetta_Raccomandata.pdf");
+        URL.revokeObjectURL(url);
+    };
+    img.src = url;
+}
+
 // 🔹 Scarica PDF AR con 3 copie sullo stesso foglio A4
 function downloadARPDF() {
     const { jsPDF } = window.jspdf;
@@ -43,7 +74,7 @@ function downloadARPDF() {
     const element = document.getElementById('return');
     element.style.display = "block";
 
-    const blockHeight = 99; // Altezza di ogni modulo AR
+    const blockHeight = 99;
 
     for (let i = 0; i < 3; i++) {
         let offsetY = i * blockHeight;
@@ -58,7 +89,6 @@ function downloadARPDF() {
             windowWidth: element.scrollWidth
         });
 
-        // Linea divisoria
         if (i < 2) {
             doc.setDrawColor(150);
             doc.line(10, blockHeight * (i + 1), 200, blockHeight * (i + 1));
@@ -102,25 +132,25 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 
     const code = generateCode();
     counter++;
-    localStorage.setItem("counter", counter); // salva il counter
+    localStorage.setItem("counter", counter);
     const date = new Date().toLocaleDateString();
 
-    // 🔹 Ricevuta di accettazione
+    // Ricevuta di accettazione
     document.getElementById('a_sender').textContent = sender;
     document.getElementById('a_recipient').textContent = recipient;
     document.getElementById('a_code').textContent = code;
     document.getElementById('a_date').textContent = date;
 
-    // 🔹 Etichetta con barcode
+    // Etichetta con barcode
     JsBarcode("#barcode", code, {
         format: "CODE128",
         width: 2,
         height: 60,
-        displayValue: true
+        displayValue: false // mostra solo barcode
     });
     document.getElementById('l_code').textContent = code;
 
-    // 🔹 Ricevuta di ritorno
+    // Ricevuta di ritorno
     document.getElementById('r_sender').textContent = sender;
     document.getElementById('r_recipient').textContent = recipient;
     document.getElementById('r_code').textContent = code;
@@ -128,7 +158,7 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 
     document.getElementById('documents').style.display = 'block';
 
-    // 🔹 Salvataggio nello storico
+    // Salvataggio nello storico
     raccomandate.push({ sender, recipient, code, date });
     localStorage.setItem("raccomandate", JSON.stringify(raccomandate));
     mostraStorico();
