@@ -1,10 +1,32 @@
-// Recupera dati salvati o inizializza array
-let shipments = JSON.parse(localStorage.getItem('shipments')) || [];
+// Dizionario CAP -> città
+const capCities = {
+    "00100": "Roma",
+    "20100": "Milano",
+    "10100": "Torino",
+    "50100": "Firenze",
+    "80100": "Napoli"
+};
 
-// contatore progressivo basato sul numero di elementi salvati
+// Funzione per aggiornare la città in base al CAP
+function updateCity(inputId, cityId) {
+    const cap = document.getElementById(inputId).value;
+    const cityField = document.getElementById(cityId);
+    if(capCities[cap]) {
+        cityField.value = capCities[cap];
+    } else {
+        cityField.value = "";
+    }
+}
+
+// Event listener CAP -> città
+document.getElementById("sender_zip").addEventListener("input", () => updateCity("sender_zip", "sender_city"));
+document.getElementById("recipient_zip").addEventListener("input", () => updateCity("recipient_zip", "recipient_city"));
+
+// Recupera storico salvato o inizializza array
+let shipments = JSON.parse(localStorage.getItem('shipments')) || [];
 let counter = shipments.length + 1;
 
-// mostra storico iniziale
+// Mostra storico
 function updateHistory() {
     const tbody = document.querySelector("#history tbody");
     tbody.innerHTML = '';
@@ -15,36 +37,39 @@ function updateHistory() {
     });
 }
 
-// genera codice univoco 17 cifre (90018 + 12 cifre progressivo)
+// Genera codice a barre univoco 17 cifre
 function generateCode() {
     let codeNumber = String(counter).padStart(12, '0');
     return '90018' + codeNumber;
 }
 
-// gestisce il submit del form
+// Submit form
 document.getElementById('raccomandataForm').addEventListener('submit', function(e){
     e.preventDefault();
 
-    const sender = document.getElementById('sender').value;
-    const recipient = document.getElementById('recipient').value;
+    const sender = document.getElementById('sender_street').value + " " +
+                   document.getElementById('sender_number').value + ", " +
+                   document.getElementById('sender_city').value + " (" +
+                   document.getElementById('sender_zip').value + ")";
+
+    const recipient = document.getElementById('recipient_street').value + " " +
+                      document.getElementById('recipient_number').value + ", " +
+                      document.getElementById('recipient_city').value + " (" +
+                      document.getElementById('recipient_zip').value + ")";
 
     const code = generateCode();
     counter++;
-
     const date = new Date().toLocaleDateString();
 
-    // salva nel browser
     shipments.push({code, sender, recipient, date});
     localStorage.setItem('shipments', JSON.stringify(shipments));
 
-    // mostra ricevuta
     document.getElementById('r_sender').textContent = sender;
     document.getElementById('r_recipient').textContent = recipient;
     document.getElementById('r_code').textContent = code;
     document.getElementById('r_date').textContent = date;
     document.getElementById('receipt').style.display = 'block';
 
-    // genera barcode in SVG
     JsBarcode("#barcode", code, {
         format: "CODE128",
         width: 2,
@@ -52,17 +77,14 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
         displayValue: true
     });
 
-    // aggiorna storico
     updateHistory();
-
-    // reset form
     document.getElementById('raccomandataForm').reset();
 });
 
-// inizializza storico al caricamento
+// Inizializza storico
 updateHistory();
 
-// --- Scarica PDF ---
+// Download PDF
 document.getElementById('downloadPDF').addEventListener('click', function(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -82,7 +104,6 @@ document.getElementById('downloadPDF').addEventListener('click', function(){
     doc.text(`Data di emissione: ${date}`, 20, 70);
     doc.text(`Numero licenza: ${license}`, 20, 80);
 
-    // barcode SVG in canvas
     const svg = document.getElementById('barcode');
     const svgData = new XMLSerializer().serializeToString(svg);
     const img = new Image();
