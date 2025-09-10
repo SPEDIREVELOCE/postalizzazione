@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <title>MailSoft Web - Raccomandate</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Libreria JsBarcode per generare barcode -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <!-- Libreria jsPDF per generare PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -14,11 +12,25 @@
 
     <h2>Nuova Raccomandata</h2>
     <form id="raccomandataForm">
-        <label>Mittente:</label><br>
-        <input type="text" id="sender" required><br>
+        <h3>Mittente</h3>
+        <label>Via:</label><br>
+        <input type="text" id="sender_street" required><br>
+        <label>Civico:</label><br>
+        <input type="text" id="sender_number" required><br>
+        <label>CAP:</label><br>
+        <input type="text" id="sender_zip" required><br>
+        <label>Città:</label><br>
+        <input type="text" id="sender_city" readonly><br>
 
-        <label>Destinatario:</label><br>
-        <input type="text" id="recipient" required><br>
+        <h3>Destinatario</h3>
+        <label>Via:</label><br>
+        <input type="text" id="recipient_street" required><br>
+        <label>Civico:</label><br>
+        <input type="text" id="recipient_number" required><br>
+        <label>CAP:</label><br>
+        <input type="text" id="recipient_zip" required><br>
+        <label>Città:</label><br>
+        <input type="text" id="recipient_city" readonly><br>
 
         <button type="submit">Salva e genera ricevuta</button>
     </form>
