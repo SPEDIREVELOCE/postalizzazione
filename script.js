@@ -1,12 +1,13 @@
 let counter = 1;
+let raccomandate = JSON.parse(localStorage.getItem("raccomandate")) || [];
 
-// Genera codice univoco
+// 🔹 Genera codice univoco
 function generateCode() {
     let codeNumber = String(counter).padStart(12, '0');
     return '90018' + codeNumber;
 }
 
-// Stampa solo una sezione
+// 🔹 Stampa solo una sezione
 function printSection(id) {
     const divToPrint = document.getElementById(id).innerHTML;
     const newWin = window.open('', '_blank');
@@ -15,47 +16,86 @@ function printSection(id) {
     newWin.print();
 }
 
-// Scarica PDF di una sezione
+// 🔹 Scarica PDF generico (Accettazione, Etichetta)
 function downloadPDF(id, filename) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
-    // cattura il div selezionato
     const element = document.getElementById(id);
     const clone = element.cloneNode(true);
+    const textElements = clone.querySelectorAll("p");
 
-    // se c’è il barcode, converti in immagine
-    const svg = clone.querySelector("svg");
-    if(svg){
-        const svgData = new XMLSerializer().serializeToString(svg);
-        const img = new Image();
-        const svgBlob = new Blob([svgData], {type:"image/svg+xml;charset=utf-8"});
-        const url = URL.createObjectURL(svgBlob);
-        img.onload = function(){
-            doc.text(filename, 20, 20);
-            doc.addImage(img, 'SVG', 20, 40, 160, 40);
-            const textElements = clone.querySelectorAll("p");
-            let y = 90;
-            textElements.forEach(p => {
-                doc.text(p.innerText, 20, y);
-                y += 10;
-            });
-            doc.save(filename + ".pdf");
-            URL.revokeObjectURL(url);
-        };
-        img.src = url;
-    } else {
-        doc.text(filename, 20, 20);
-        const textElements = clone.querySelectorAll("p");
-        let y = 40;
-        textElements.forEach(p => {
-            doc.text(p.innerText, 20, y);
-            y += 10;
-        });
-        doc.save(filename + ".pdf");
-    }
+    doc.setFontSize(12);
+    doc.text(filename, 20, 20);
+
+    let y = 40;
+    textElements.forEach(p => {
+        doc.text(p.innerText, 20, y);
+        y += 10;
+    });
+
+    doc.save(filename + ".pdf");
 }
 
+// 🔹 Scarica PDF AR con 3 copie sullo stesso foglio A4
+function downloadARPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+    const sender = document.getElementById('r_sender').textContent;
+    const recipient = document.getElementById('r_recipient').textContent;
+    const code = document.getElementById('r_code').textContent;
+    const date = document.getElementById('r_date').textContent;
+
+    // Altezza di ogni modulo AR (circa 99 mm)
+    const blockHeight = 99;
+
+    for (let i = 0; i < 3; i++) {
+        let offset = i * blockHeight;
+
+        doc.setFontSize(9);
+
+        // Mittente
+        doc.text("Mittente:", 20, 20 + offset);
+        doc.text(sender, 20, 25 + offset);
+
+        // Destinatario
+        doc.text("Destinatario:", 20, 45 + offset);
+        doc.text(recipient, 20, 50 + offset);
+
+        // Numero raccomandata
+        doc.setFontSize(10);
+        doc.text("Raccomandata n.: " + code, 20, 70 + offset);
+
+        // Data accettazione
+        doc.text("Data accettazione: " + date, 20, 80 + offset);
+
+        // Linea divisoria per le copie (solo per allineamento)
+        if (i < 2) {
+            doc.setDrawColor(150);
+            doc.line(10, blockHeight * (i + 1), 200, blockHeight * (i + 1));
+        }
+    }
+
+    doc.save("Ricevuta_Ritorno.pdf");
+}
+
+// 🔹 Mostra lo storico raccomandate
+function mostraStorico() {
+    const tbody = document.querySelector("#storico tbody");
+    tbody.innerHTML = "";
+    raccomandate.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${r.code}</td>
+            <td>${r.sender}</td>
+            <td>${r.recipient}</td>
+            <td>${r.date}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// 🔹 Gestione invio form
 document.getElementById('raccomandataForm').addEventListener('submit', function(e){
     e.preventDefault();
 
@@ -77,13 +117,13 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
     counter++;
     const date = new Date().toLocaleDateString();
 
-    // Ricevuta accettazione
+    // Ricevuta di accettazione
     document.getElementById('a_sender').textContent = sender;
     document.getElementById('a_recipient').textContent = recipient;
     document.getElementById('a_code').textContent = code;
     document.getElementById('a_date').textContent = date;
 
-    // Etichetta
+    // Etichetta con barcode
     JsBarcode("#barcode", code, {
         format: "CODE128",
         width: 2,
@@ -92,11 +132,19 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
     });
     document.getElementById('l_code').textContent = code;
 
-    // Ricevuta ritorno
+    // Ricevuta di ritorno
     document.getElementById('r_sender').textContent = sender;
     document.getElementById('r_recipient').textContent = recipient;
     document.getElementById('r_code').textContent = code;
     document.getElementById('r_date').textContent = date;
 
     document.getElementById('documents').style.display = 'block';
+
+    // Salvataggio nello storico
+    raccomandate.push({ sender, recipient, code, date });
+    localStorage.setItem("raccomandate", JSON.stringify(raccomandate));
+    mostraStorico();
 });
+
+// Mostra storico al caricamento
+mostraStorico();
