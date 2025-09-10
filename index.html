@@ -39,6 +39,7 @@
             <p><strong>Numero raccomandata:</strong> <span id="a_code"></span></p>
             <p><strong>Data accettazione:</strong> <span id="a_date"></span></p>
             <button onclick="printSection('acceptance')">Stampa</button>
+            <button onclick="downloadPDF('acceptance','Ricevuta_Accettazione')">Scarica PDF</button>
         </div>
 
         <h2>Etichetta</h2>
@@ -46,6 +47,7 @@
             <svg id="barcode"></svg>
             <p id="l_code"></p>
             <button onclick="printSection('label')">Stampa</button>
+            <button onclick="downloadPDF('label','Etichetta')">Scarica PDF</button>
         </div>
 
         <h2>Ricevuta di Ritorno</h2>
@@ -55,6 +57,7 @@
             <p><strong>Numero raccomandata:</strong> <span id="r_code"></span></p>
             <p><strong>Data accettazione:</strong> <span id="r_date"></span></p>
             <button onclick="printSection('return')">Stampa</button>
+            <button onclick="downloadPDF('return','Ricevuta_Ritorno')">Scarica PDF</button>
         </div>
     </div>
 
