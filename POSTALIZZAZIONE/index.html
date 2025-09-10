@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MailSoft Web - Raccomandate</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Libreria JsBarcode per generare barcode -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- Libreria jsPDF per generare PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>MailSoft Web - Raccomandate</h1>
+
+    <h2>Nuova Raccomandata</h2>
+    <form id="raccomandataForm">
+        <label>Mittente:</label><br>
+        <input type="text" id="sender" required><br>
+
+        <label>Destinatario:</label><br>
+        <input type="text" id="recipient" required><br>
+
+        <button type="submit">Salva e genera ricevuta</button>
+    </form>
+
+    <div id="receipt" style="display:none;">
+        <h2>Ricevuta di Ritorno</h2>
+        <p><strong>Mittente:</strong> <span id="r_sender"></span></p>
+        <p><strong>Destinatario:</strong> <span id="r_recipient"></span></p>
+        <p><strong>Codice a barre:</strong> <span id="r_code"></span></p>
+        <p><strong>Data di emissione:</strong> <span id="r_date"></span></p>
+        <p><strong>Numero licenza:</strong> 690/2009</p>
+        <svg id="barcode"></svg>
+        <br><br>
+        <button onclick="window.print()">Stampa Ricevuta</button>
+        <button id="downloadPDF">Scarica PDF</button>
+    </div>
+
+    <h2>Storico Raccomandate</h2>
+    <table id="history">
+        <thead>
+            <tr>
+                <th>Codice</th>
+                <th>Mittente</th>
+                <th>Destinatario</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script src="script.js"></script>
+</body>
+</html>
