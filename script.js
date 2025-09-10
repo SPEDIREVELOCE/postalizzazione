@@ -1,27 +1,3 @@
-// Dizionario CAP -> città
-const capCities = {
-    "90018": "Termini Imerese",
-    "90019": "Trabia",
-    "90022": "Caltavuturo",
-    "90012": "Caccamo",
-    "80100": "Napoli"
-};
-
-// Funzione per aggiornare la città in base al CAP
-function updateCity(inputId, cityId) {
-    const cap = document.getElementById(inputId).value;
-    const cityField = document.getElementById(cityId);
-    if(capCities[cap]) {
-        cityField.value = capCities[cap];
-    } else {
-        cityField.value = "";
-    }
-}
-
-// Event listener CAP -> città
-document.getElementById("sender_zip").addEventListener("input", () => updateCity("sender_zip", "sender_city"));
-document.getElementById("recipient_zip").addEventListener("input", () => updateCity("recipient_zip", "recipient_city"));
-
 // Recupera storico salvato o inizializza array
 let shipments = JSON.parse(localStorage.getItem('shipments')) || [];
 let counter = shipments.length + 1;
@@ -37,7 +13,7 @@ function updateHistory() {
     });
 }
 
-// Genera codice a barre univoco 17 cifre
+// Genera codice univoco 17 cifre
 function generateCode() {
     let codeNumber = String(counter).padStart(12, '0');
     return '90018' + codeNumber;
@@ -47,25 +23,37 @@ function generateCode() {
 document.getElementById('raccomandataForm').addEventListener('submit', function(e){
     e.preventDefault();
 
-    const sender = document.getElementById('sender_street').value + " " +
-                   document.getElementById('sender_number').value + ", " +
-                   document.getElementById('sender_city').value + " (" +
-                   document.getElementById('sender_zip').value + ")";
+    const senderName = document.getElementById('sender_name').value + " " +
+                       document.getElementById('sender_surname').value;
+    const senderAddress = document.getElementById('sender_street').value + " " +
+                          document.getElementById('sender_number').value + ", " +
+                          document.getElementById('sender_city').value + " (" +
+                          document.getElementById('sender_zip').value + ")";
 
-    const recipient = document.getElementById('recipient_street').value + " " +
-                      document.getElementById('recipient_number').value + ", " +
-                      document.getElementById('recipient_city').value + " (" +
-                      document.getElementById('recipient_zip').value + ")";
+    const recipientName = document.getElementById('recipient_name').value + " " +
+                          document.getElementById('recipient_surname').value;
+    const recipientAddress = document.getElementById('recipient_street').value + " " +
+                             document.getElementById('recipient_number').value + ", " +
+                             document.getElementById('recipient_city').value + " (" +
+                             document.getElementById('recipient_zip').value + ")";
 
     const code = generateCode();
     counter++;
     const date = new Date().toLocaleDateString();
 
-    shipments.push({code, sender, recipient, date});
+    shipments.push({
+        code,
+        sender: senderName + " - " + senderAddress,
+        recipient: recipientName + " - " + recipientAddress,
+        date
+    });
     localStorage.setItem('shipments', JSON.stringify(shipments));
 
-    document.getElementById('r_sender').textContent = sender;
-    document.getElementById('r_recipient').textContent = recipient;
+    // Aggiorna ricevuta
+    document.getElementById('r_sender_name').textContent = senderName;
+    document.getElementById('r_sender_address').textContent = senderAddress;
+    document.getElementById('r_recipient_name').textContent = recipientName;
+    document.getElementById('r_recipient_address').textContent = recipientAddress;
     document.getElementById('r_code').textContent = code;
     document.getElementById('r_date').textContent = date;
     document.getElementById('receipt').style.display = 'block';
@@ -84,13 +72,15 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 // Inizializza storico
 updateHistory();
 
-// Download PDF
+// Download PDF funzionante
 document.getElementById('downloadPDF').addEventListener('click', function(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const sender = document.getElementById('r_sender').textContent;
-    const recipient = document.getElementById('r_recipient').textContent;
+    const senderName = document.getElementById('r_sender_name').textContent;
+    const senderAddress = document.getElementById('r_sender_address').textContent;
+    const recipientName = document.getElementById('r_recipient_name').textContent;
+    const recipientAddress = document.getElementById('r_recipient_address').textContent;
     const code = document.getElementById('r_code').textContent;
     const date = document.getElementById('r_date').textContent;
     const license = '690/2009';
@@ -98,22 +88,24 @@ document.getElementById('downloadPDF').addEventListener('click', function(){
     doc.setFontSize(14);
     doc.text("Ricevuta di Ritorno", 20, 20);
     doc.setFontSize(12);
-    doc.text(`Mittente: ${sender}`, 20, 40);
-    doc.text(`Destinatario: ${recipient}`, 20, 50);
-    doc.text(`Codice a barre: ${code}`, 20, 60);
-    doc.text(`Data di emissione: ${date}`, 20, 70);
-    doc.text(`Numero licenza: ${license}`, 20, 80);
+    doc.text(`Mittente: ${senderName}`, 20, 40);
+    doc.text(senderAddress, 20, 50);
+    doc.text(`Destinatario: ${recipientName}`, 20, 65);
+    doc.text(recipientAddress, 20, 75);
+    doc.text(`Codice a barre: ${code}`, 20, 90);
+    doc.text(`Data di emissione: ${date}`, 20, 100);
+    doc.text(`Numero licenza: ${license}`, 20, 110);
 
+    // Barcode come immagine
     const svg = document.getElementById('barcode');
     const svgData = new XMLSerializer().serializeToString(svg);
     const img = new Image();
     const svgBlob = new Blob([svgData], {type:"image/svg+xml;charset=utf-8"});
     const url = URL.createObjectURL(svgBlob);
     img.onload = function(){
-        doc.addImage(img, 'SVG', 20, 90, 160, 40);
+        doc.addImage(img, 'SVG', 20, 120, 160, 40);
         doc.save(`Ricevuta_${code}.pdf`);
         URL.revokeObjectURL(url);
     };
     img.src = url;
 });
-
