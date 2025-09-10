@@ -11,6 +11,7 @@ input {
 button {
     margin-top: 10px;
     margin-right: 10px;
+    padding: 5px 10px;
 }
 
 .doc {
@@ -18,4 +19,15 @@ button {
     padding: 15px;
     margin-top: 20px;
     width: 350px;
+}
+
+table {
+    border-collapse: collapse;
+    margin-top: 20px;
+    width: 90%;
+}
+
+table, th, td {
+    border: 1px solid black;
+    padding: 8px;
 }
