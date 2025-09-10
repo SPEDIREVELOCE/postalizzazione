@@ -1,9 +1,9 @@
 // Dizionario CAP -> città
 const capCities = {
-    "00100": "Roma",
-    "20100": "Milano",
-    "10100": "Torino",
-    "50100": "Firenze",
+    "90018": "Termini Imerese",
+    "90019": "Trabia",
+    "90022": "Caltavuturo",
+    "90012": "Caccamo",
     "80100": "Napoli"
 };
 
@@ -116,3 +116,4 @@ document.getElementById('downloadPDF').addEventListener('click', function(){
     };
     img.src = url;
 });
+
