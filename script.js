@@ -22,7 +22,7 @@ function downloadPDF(sectionId, fileName) {
     const doc = new jsPDF();
 
     const element = document.getElementById(sectionId);
-    element.style.display = "block"; // assicurati che sia visibile
+    element.style.display = "block";
 
     doc.html(element, {
         callback: function (doc) {
@@ -43,19 +43,27 @@ function downloadLabelPDF() {
     const barcodeSVG = document.getElementById("barcode");
     const codeText = document.getElementById("l_code").textContent;
 
+    // Converti SVG in canvas e poi in PNG
     const svgData = new XMLSerializer().serializeToString(barcodeSVG);
     const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
     const url = URL.createObjectURL(svgBlob);
 
     const img = new Image();
     img.onload = function() {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = canvas.toDataURL("image/png"); 
         const pageWidth = doc.internal.pageSize.getWidth();
-        const imgWidth = 100;
+        const imgWidth = 100; 
         const imgHeight = 30;
         const x = (pageWidth - imgWidth) / 2;
         const y = 40;
 
-        doc.addImage(img, "SVG", x, y, imgWidth, imgHeight);
+        doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
 
         doc.setFontSize(16);
         doc.text(codeText, pageWidth / 2, y + imgHeight + 10, { align: "center" });
@@ -146,7 +154,7 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
         format: "CODE128",
         width: 2,
         height: 60,
-        displayValue: false // mostra solo barcode
+        displayValue: false
     });
     document.getElementById('l_code').textContent = code;
 
