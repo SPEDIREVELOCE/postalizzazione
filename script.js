@@ -1,4 +1,4 @@
-let counter = 1;
+let counter = parseInt(localStorage.getItem("counter")) || 1;
 let raccomandate = JSON.parse(localStorage.getItem("raccomandate")) || [];
 
 // 🔹 Genera codice univoco
@@ -16,24 +16,23 @@ function printSection(id) {
     newWin.print();
 }
 
-// 🔹 Scarica PDF generico (Accettazione, Etichetta)
-function downloadPDF(id, filename) {
+// 🔹 Scarica PDF (Accettazione, Etichetta, AR)
+function downloadPDF(sectionId, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const element = document.getElementById(id);
-    const clone = element.cloneNode(true);
-    const textElements = clone.querySelectorAll("p");
 
-    doc.setFontSize(12);
-    doc.text(filename, 20, 20);
+    const element = document.getElementById(sectionId);
+    element.style.display = "block"; // assicurati che sia visibile
 
-    let y = 40;
-    textElements.forEach(p => {
-        doc.text(p.innerText, 20, y);
-        y += 10;
+    doc.html(element, {
+        callback: function (doc) {
+            doc.save(fileName + ".pdf");
+        },
+        x: 10,
+        y: 10,
+        width: 180,
+        windowWidth: element.scrollWidth
     });
-
-    doc.save(filename + ".pdf");
 }
 
 // 🔹 Scarica PDF AR con 3 copie sullo stesso foglio A4
@@ -41,42 +40,30 @@ function downloadARPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-    const sender = document.getElementById('r_sender').textContent;
-    const recipient = document.getElementById('r_recipient').textContent;
-    const code = document.getElementById('r_code').textContent;
-    const date = document.getElementById('r_date').textContent;
+    const element = document.getElementById('return');
+    element.style.display = "block";
 
-    // Altezza di ogni modulo AR (circa 99 mm)
-    const blockHeight = 99;
+    const blockHeight = 99; // Altezza di ogni modulo AR
 
     for (let i = 0; i < 3; i++) {
-        let offset = i * blockHeight;
+        let offsetY = i * blockHeight;
 
-        doc.setFontSize(9);
+        doc.html(element, {
+            callback: function (doc) {
+                if (i === 2) doc.save("Ricevuta_Ritorno.pdf");
+            },
+            x: 10,
+            y: offsetY + 10,
+            width: 180,
+            windowWidth: element.scrollWidth
+        });
 
-        // Mittente
-        doc.text("Mittente:", 20, 20 + offset);
-        doc.text(sender, 20, 25 + offset);
-
-        // Destinatario
-        doc.text("Destinatario:", 20, 45 + offset);
-        doc.text(recipient, 20, 50 + offset);
-
-        // Numero raccomandata
-        doc.setFontSize(10);
-        doc.text("Raccomandata n.: " + code, 20, 70 + offset);
-
-        // Data accettazione
-        doc.text("Data accettazione: " + date, 20, 80 + offset);
-
-        // Linea divisoria per le copie (solo per allineamento)
+        // Linea divisoria
         if (i < 2) {
             doc.setDrawColor(150);
             doc.line(10, blockHeight * (i + 1), 200, blockHeight * (i + 1));
         }
     }
-
-    doc.save("Ricevuta_Ritorno.pdf");
 }
 
 // 🔹 Mostra lo storico raccomandate
@@ -115,24 +102,25 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 
     const code = generateCode();
     counter++;
+    localStorage.setItem("counter", counter); // salva il counter
     const date = new Date().toLocaleDateString();
 
-    // Ricevuta di accettazione
+    // 🔹 Ricevuta di accettazione
     document.getElementById('a_sender').textContent = sender;
     document.getElementById('a_recipient').textContent = recipient;
     document.getElementById('a_code').textContent = code;
     document.getElementById('a_date').textContent = date;
 
-    // Etichetta con barcode
+    // 🔹 Etichetta con barcode
     JsBarcode("#barcode", code, {
         format: "CODE128",
         width: 2,
         height: 60,
-        displayValue: false
+        displayValue: true
     });
     document.getElementById('l_code').textContent = code;
 
-    // Ricevuta di ritorno
+    // 🔹 Ricevuta di ritorno
     document.getElementById('r_sender').textContent = sender;
     document.getElementById('r_recipient').textContent = recipient;
     document.getElementById('r_code').textContent = code;
@@ -140,7 +128,7 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 
     document.getElementById('documents').style.display = 'block';
 
-    // Salvataggio nello storico
+    // 🔹 Salvataggio nello storico
     raccomandate.push({ sender, recipient, code, date });
     localStorage.setItem("raccomandate", JSON.stringify(raccomandate));
     mostraStorico();
