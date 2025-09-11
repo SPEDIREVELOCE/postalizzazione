@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Gestione Raccomandate</title>
@@ -33,15 +33,12 @@
     </form>
 
     <div id="documents" style="display:none;">
-
         <h2>Ricevuta di Accettazione</h2>
         <div class="doc" id="acceptance">
             <p><strong>Mittente:</strong> <span id="a_sender"></span></p>
             <p><strong>Destinatario:</strong> <span id="a_recipient"></span></p>
             <p><strong>Numero raccomandata:</strong> <span id="a_code"></span></p>
             <p><strong>Data accettazione:</strong> <span id="a_date"></span></p>
-        </div>
-        <div class="actions">
             <button onclick="printSection('acceptance')">Stampa</button>
             <button onclick="downloadPDF('acceptance','Ricevuta_Accettazione')">Scarica PDF</button>
         </div>
@@ -49,10 +46,8 @@
         <h2>Etichetta</h2>
         <div class="doc" id="label" style="text-align:center;">
             <svg id="barcode"></svg>
-            <p id="l_code" style="font-size:18px; font-weight:bold; margin-top:5px;"></p>
-            <p><strong>Data registrazione:</strong> <span id="l_date"></span></p>
-        </div>
-        <div class="actions">
+            <p id="l_code"></p>
+            <p id="l_date" style="font-size:12px;"></p>
             <button onclick="printSection('label')">Stampa</button>
             <button onclick="downloadPDF('label','Etichetta')">Scarica PDF</button>
         </div>
@@ -63,8 +58,6 @@
             <p><strong>Destinatario:</strong> <span id="r_recipient"></span></p>
             <p><strong>Numero raccomandata:</strong> <span id="r_code"></span></p>
             <p><strong>Data accettazione:</strong> <span id="r_date"></span></p>
-        </div>
-        <div class="actions">
             <button onclick="printSection('return')">Stampa</button>
             <button onclick="downloadARPDF()">Scarica PDF AR</button>
         </div>
