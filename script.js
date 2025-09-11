@@ -93,7 +93,11 @@ function ristampaAccettazione(i) {
     document.getElementById('a_recipient').textContent = r.recipient;
     document.getElementById('a_code').textContent = r.code;
     document.getElementById('a_date').textContent = r.date;
-    downloadPDF('acceptance', 'Ricevuta_Accettazione_' + r.code);
+
+    // Aspetta che il DOM si aggiorni
+    setTimeout(() => {
+        downloadPDF('acceptance', 'Ricevuta_Accettazione_' + r.code);
+    }, 300);
 }
 
 function ristampaEtichetta(i) {
@@ -106,7 +110,11 @@ function ristampaEtichetta(i) {
     });
     document.getElementById('l_code').textContent = r.code;
     document.getElementById('l_date').textContent = r.date;
-    downloadPDF('label', 'Etichetta_' + r.code);
+
+    // Aspetta che il DOM si aggiorni
+    setTimeout(() => {
+        downloadPDF('label', 'Etichetta_' + r.code);
+    }, 300);
 }
 
 function ristampaAR(i) {
@@ -115,8 +123,13 @@ function ristampaAR(i) {
     document.getElementById('r_recipient').textContent = r.recipient;
     document.getElementById('r_code').textContent = r.code;
     document.getElementById('r_date').textContent = r.date;
-    downloadARPDF();
+
+    // Aspetta che il DOM si aggiorni
+    setTimeout(() => {
+        downloadARPDF();
+    }, 300);
 }
+
 
 // 🔹 Gestione invio form
 document.getElementById('raccomandataForm').addEventListener('submit', function(e){
@@ -173,3 +186,4 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 
 // Mostra storico al caricamento
 mostraStorico();
+
