@@ -2,43 +2,48 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Gestione Raccomandate - Lavorazione Batch</title>
+<title>Gestione Raccomandate - Moduli PDF</title>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1, h2 { color: #333; }
-    .doc { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 5px; text-align: left; }
-    button { margin: 2px; }
+body { font-family: Arial, sans-serif; padding: 20px; background:#f5f5f5; }
+h1, h2 { color: #333; }
+input { padding:5px; margin:3px; border-radius:4px; border:1px solid #ccc; }
+button { padding:5px 10px; margin:3px; border:none; border-radius:4px; background:#4CAF50; color:white; cursor:pointer; }
+button:hover { background:#45a049; }
+.doc { border:1px solid #ccc; border-radius:6px; padding:10px; margin:10px 0; background:#fff; }
+table { width:100%; border-collapse: collapse; margin-top: 10px; background:#fff; border-radius:6px; overflow:hidden; }
+th, td { border:1px solid #ccc; padding:5px; text-align:left; }
+th { background:#4CAF50; color:white; }
+td button { background:#2196F3; margin:0 2px; }
+td button:hover { background:#0b7dda; }
 </style>
 </head>
 <body>
 
-<h1>Gestione Raccomandate - Lavorazione Batch</h1>
+<h1>Gestione Raccomandate - Moduli PDF</h1>
 
 <button id="startBatchBtn">Nuova Lavorazione</button>
 
-<div id="mittenteSection" style="display:none;">
+<div id="mittenteSection" style="display:none;" class="doc">
     <h2>Mittente</h2>
     <input type="text" id="sender_name" placeholder="Nome" required>
-    <input type="text" id="sender_surname" placeholder="Cognome" required>
+    <input type="text" id="sender_surname" placeholder="Cognome" required><br>
     <input type="text" id="sender_street" placeholder="Via" required>
-    <input type="text" id="sender_number" placeholder="Civico" required>
+    <input type="text" id="sender_number" placeholder="Civico" required><br>
     <input type="text" id="sender_zip" placeholder="CAP" required>
-    <input type="text" id="sender_city" placeholder="Città" required>
+    <input type="text" id="sender_city" placeholder="Città" required><br>
     <button id="saveMittenteBtn">Salva Mittente</button>
 </div>
 
-<div id="raccomandataSection" style="display:none;">
+<div id="raccomandataSection" style="display:none;" class="doc">
     <h2>Nuova Raccomandata</h2>
     <input type="text" id="recipient_name" placeholder="Nome destinatario" required>
-    <input type="text" id="recipient_surname" placeholder="Cognome destinatario" required>
+    <input type="text" id="recipient_surname" placeholder="Cognome destinatario" required><br>
     <input type="text" id="recipient_street" placeholder="Via destinatario" required>
-    <input type="text" id="recipient_number" placeholder="Civico destinatario" required>
+    <input type="text" id="recipient_number" placeholder="Civico destinatario" required><br>
     <input type="text" id="recipient_zip" placeholder="CAP destinatario" required>
-    <input type="text" id="recipient_city" placeholder="Città destinatario" required>
+    <input type="text" id="recipient_city" placeholder="Città destinatario" required><br>
     <button id="addRaccomandataBtn">Aggiungi Raccomandata</button>
 </div>
 
@@ -56,6 +61,22 @@
 
 <button id="generateBatchPDFBtn" style="display:none;">Stampa/Scarica Tutto</button>
 
+<h2>Storico Raccomandate</h2>
+<table id="storicoTable">
+<thead>
+<tr>
+    <th>Codice</th>
+    <th>Mittente</th>
+    <th>Destinatario</th>
+    <th>Data</th>
+    <th>Azioni</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<svg id="tempBarcode" style="display:none;"></svg>
+
 <script>
 let counter = parseInt(localStorage.getItem("counter")) || 1;
 let storico = JSON.parse(localStorage.getItem("storico")) || [];
@@ -67,12 +88,29 @@ function generateCode() {
     return '90018' + codeNumber;
 }
 
-// Inizio nuova lavorazione
+function updateStoricoTable(){
+    let tbody = document.querySelector("#storicoTable tbody");
+    tbody.innerHTML="";
+    storico.forEach((r,index)=>{
+        let tr = document.createElement("tr");
+        tr.innerHTML = `<td>${r.code}</td>
+                        <td>${r.mittente.name} ${r.mittente.surname}</td>
+                        <td>${r.recipient.name} ${r.recipient.surname}</td>
+                        <td>${r.date}</td>
+                        <td>
+                            <button onclick="downloadSinglePDF(${index},'etichetta')">Etichetta</button>
+                            <button onclick="downloadSinglePDF(${index},'accettazione')">Accettazione</button>
+                            <button onclick="downloadSinglePDF(${index},'ritorno')">Ritorno</button>
+                        </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+// Eventi UI
 document.getElementById("startBatchBtn").addEventListener("click", ()=>{
     document.getElementById("mittenteSection").style.display = "block";
 });
 
-// Salva mittente
 document.getElementById("saveMittenteBtn").addEventListener("click", ()=>{
     mittente = {
         name: document.getElementById('sender_name').value,
@@ -88,7 +126,6 @@ document.getElementById("saveMittenteBtn").addEventListener("click", ()=>{
     document.getElementById("generateBatchPDFBtn").style.display = "inline-block";
 });
 
-// Aggiungi raccomandata alla lista batch
 document.getElementById("addRaccomandataBtn").addEventListener("click", ()=>{
     let recipient = {
         name: document.getElementById('recipient_name').value,
@@ -108,13 +145,11 @@ document.getElementById("addRaccomandataBtn").addEventListener("click", ()=>{
     let raccomandata = { mittente, recipient, code, date };
     batchList.push(raccomandata);
     
-    // Aggiorna tabella batch
     let tbody = document.querySelector("#batchTable tbody");
     let tr = document.createElement("tr");
     tr.innerHTML = `<td>${code}</td><td>${recipient.name} ${recipient.surname}</td><td>${date}</td>`;
     tbody.appendChild(tr);
-    
-    // Pulisci form destinatario
+
     document.getElementById('recipient_name').value="";
     document.getElementById('recipient_surname').value="";
     document.getElementById('recipient_street').value="";
@@ -123,17 +158,12 @@ document.getElementById("addRaccomandataBtn").addEventListener("click", ()=>{
     document.getElementById('recipient_city').value="";
 });
 
-// Genera PDF batch
-document.getElementById("generateBatchPDFBtn").addEventListener("click", async ()=>{
-    if(batchList.length==0) { alert("Non ci sono raccomandate in lavorazione"); return; }
+// Funzione helper per PDF con layout simile al modulo
+async function generateModulePDF(r, type, doc, yStart){
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({unit:"mm", format:"a4"});
-    let y = 10;
+    let y = yStart;
 
-    for(let r of batchList){
-        // Etichetta
-        doc.text("Etichetta", 10, y);
-        y += 10;
+    if(type=="etichetta"){
         JsBarcode("#tempBarcode", r.code, {format:"CODE128", width:2, height:40, displayValue:false});
         let svg = document.getElementById("tempBarcode");
         let svgData = new XMLSerializer().serializeToString(svg);
@@ -143,61 +173,67 @@ document.getElementById("generateBatchPDFBtn").addEventListener("click", async (
         let img = new Image();
         let svgBlob = new Blob([svgData], {type:"image/svg+xml;charset=utf-8"});
         let url = DOMURL.createObjectURL(svgBlob);
-        await new Promise((res)=>{
-            img.onload = function(){
-                canvas.width = img.width;
-                canvas.height = img.height;
+        await new Promise(resolve=>{
+            img.onload = ()=>{
+                canvas.width = img.width; canvas.height = img.height;
                 ctx.drawImage(img,0,0);
-                let imgData = canvas.toDataURL("image/png");
-                doc.addImage(imgData, "PNG", 10, y, 80, 20);
-                doc.text(r.code, 10, y+25);
-                doc.text("Data: "+r.date, 10, y+35);
-                y += 45;
-                res();
+                let imgData = canvas.toDataURL("imagePNG");
+                doc.addImage(imgData,'PNG',10,y,80,30);
+                doc.setFontSize(12);
+                doc.text(r.code, 10, y+35);
+                doc.text("Data: "+r.date, 10, y+40);
+                resolve();
+                DOMURL.revokeObjectURL(url);
             };
-            img.src = url;
+            img.src=url;
         });
+    } else {
+        doc.setDrawColor(0);
+        doc.rect(10,y,190,40); // rettangolo modulo
+        doc.setFontSize(11);
+        let title = type=="accettazione" ? "Ricevuta Accettazione" : "Ricevuta Ritorno";
+        doc.text(title,12,y+5);
+        doc.text(`Mittente: ${r.mittente.name} ${r.mittente.surname}`,12,y+12);
+        doc.text(`Destinatario: ${r.recipient.name} ${r.recipient.surname}`,12,y+18);
+        doc.text(`Codice: ${r.code}`,12,y+24);
+        doc.text(`Data: ${r.date}`,12,y+30);
+    }
+    return y+50;
+}
 
-        // Ricevuta di accettazione
-        doc.text("Ricevuta di Accettazione", 10, y);
-        y += 10;
-        doc.text("Mittente: "+r.mittente.name+" "+r.mittente.surname, 10, y);
-        y += 7;
-        doc.text("Destinatario: "+r.recipient.name+" "+r.recipient.surname, 10, y);
-        y += 7;
-        doc.text("Codice: "+r.code, 10, y);
-        y += 7;
-        doc.text("Data: "+r.date, 10, y);
-        y += 15;
-
-        // Ricevuta di ritorno
-        doc.text("Ricevuta di Ritorno", 10, y);
-        y += 10;
-        doc.text("Mittente: "+r.mittente.name+" "+r.mittente.surname, 10, y);
-        y += 7;
-        doc.text("Destinatario: "+r.recipient.name+" "+r.recipient.surname, 10, y);
-        y += 7;
-        doc.text("Codice: "+r.code, 10, y);
-        y += 7;
-        doc.text("Data: "+r.date, 10, y);
-        y += 15;
-
+// Generazione batch PDF
+document.getElementById("generateBatchPDFBtn").addEventListener("click", async ()=>{
+    if(batchList.length===0){ alert("Nessuna raccomandata in lavorazione"); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:"mm",format:"a4"});
+    let y=10;
+    for(let r of batchList){
+        y = await generateModulePDF(r,"etichetta",doc,y);
+        y = await generateModulePDF(r,"accettazione",doc,y);
+        y = await generateModulePDF(r,"ritorno",doc,y);
         if(y>250){ doc.addPage(); y=10; }
     }
-
-    doc.save("Batch_Raccomandate.pdf");
-
-    // Salvataggio nello storico generale
-    storico = storico.concat(batchList);
+    doc.save("Lavorazione_Raccomandate.pdf");
+    // Salva nello storico
+    storico.push(...batchList);
     localStorage.setItem("storico", JSON.stringify(storico));
-    batchList = [];
+    batchList=[];
     document.querySelector("#batchTable tbody").innerHTML="";
+    updateStoricoTable();
 });
 
-</script>
+// PDF singoli dallo storico
+async function downloadSinglePDF(index,type){
+    let r = storico[index];
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:"mm", format:"a4"});
+    await generateModulePDF(r,type,doc,10);
+    doc.save(`${type}_${r.code}.pdf`);
+}
 
-<!-- Contenitore temporaneo per barcode -->
-<svg id="tempBarcode" style="display:none;"></svg>
+// Aggiorna storico al caricamento
+updateStoricoTable();
+</script>
 
 </body>
 </html>
