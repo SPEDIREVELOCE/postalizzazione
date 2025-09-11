@@ -103,21 +103,23 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
     counter++;
     localStorage.setItem("counter", counter);
     const date = new Date().toLocaleDateString();
+// 🔹 Ricevuta di accettazione
+document.getElementById('a_sender').textContent = sender;
+document.getElementById('a_recipient').textContent = recipient;
+document.getElementById('a_code').textContent = code;
+document.getElementById('a_date').textContent = date;
 
-    // Ricevuta di accettazione
-    document.getElementById('a_sender').textContent = sender;
-    document.getElementById('a_recipient').textContent = recipient;
-    document.getElementById('a_code').textContent = code;
-    document.getElementById('a_date').textContent = date;
+// 🔹 Etichetta con barcode
+JsBarcode("#barcode", code, {
+    format: "CODE128",
+    width: 2,
+    height: 60,
+    displayValue: false // disattivo il testo sotto al barcode
+});
+document.getElementById('l_code').textContent = code;
+document.getElementById('l_date').textContent = date;  // 🔹 aggiunta data
 
-    // Etichetta con barcode
-    JsBarcode("#barcode", code, {
-        format: "CODE128",
-        width: 2,
-        height: 60,
-        displayValue: false
-    });
-    document.getElementById('l_code').textContent = code;
+
 
     // Ricevuta di ritorno
     document.getElementById('r_sender').textContent = sender;
@@ -135,3 +137,4 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
 
 // Mostra storico al caricamento
 mostraStorico();
+
