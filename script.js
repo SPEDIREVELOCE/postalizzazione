@@ -16,7 +16,7 @@ function printSection(id) {
     newWin.print();
 }
 
-// 🔹 Scarica PDF di una sezione (Accettazione, Etichetta, ecc.)
+// 🔹 Scarica PDF di una sezione
 function downloadPDF(sectionId, fileName) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p", "mm", "a4");
@@ -69,16 +69,53 @@ function downloadARPDF() {
 function mostraStorico() {
     const tbody = document.querySelector("#storico tbody");
     tbody.innerHTML = "";
-    raccomandate.forEach(r => {
+    raccomandate.forEach((r, index) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${r.code}</td>
             <td>${r.sender}</td>
             <td>${r.recipient}</td>
             <td>${r.date}</td>
+            <td>
+                <button onclick="ristampaAccettazione(${index})">Accettazione</button>
+                <button onclick="ristampaEtichetta(${index})">Etichetta</button>
+                <button onclick="ristampaAR(${index})">AR</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// 🔹 Ristampe dallo storico
+function ristampaAccettazione(i) {
+    const r = raccomandate[i];
+    document.getElementById('a_sender').textContent = r.sender;
+    document.getElementById('a_recipient').textContent = r.recipient;
+    document.getElementById('a_code').textContent = r.code;
+    document.getElementById('a_date').textContent = r.date;
+    downloadPDF('acceptance', 'Ricevuta_Accettazione_' + r.code);
+}
+
+function ristampaEtichetta(i) {
+    const r = raccomandate[i];
+    JsBarcode("#barcode", r.code, {
+        format: "CODE128",
+        width: 2,
+        height: 60,
+        displayValue: false
+    });
+    document.getElementById('l_code').textContent = r.code;
+    document.getElementById('l_date').textContent = r.date;
+    downloadPDF('label', 'Etichetta_' + r.code);
+}
+
+function ristampaAR(i) {
+    const r = raccomandate[i];
+    document.getElementById('r_sender').textContent = r.sender;
+    document.getElementById('r_recipient').textContent = r.recipient;
+    document.getElementById('r_code').textContent = r.code;
+    document.getElementById('r_date').textContent = r.date;
+    downloadARPDF();
 }
 
 // 🔹 Gestione invio form
@@ -103,25 +140,24 @@ document.getElementById('raccomandataForm').addEventListener('submit', function(
     counter++;
     localStorage.setItem("counter", counter);
     const date = new Date().toLocaleDateString();
-// 🔹 Ricevuta di accettazione
-document.getElementById('a_sender').textContent = sender;
-document.getElementById('a_recipient').textContent = recipient;
-document.getElementById('a_code').textContent = code;
-document.getElementById('a_date').textContent = date;
 
-// 🔹 Etichetta con barcode
-JsBarcode("#barcode", code, {
-    format: "CODE128",
-    width: 2,
-    height: 60,
-    displayValue: false // disattivo il testo sotto al barcode
-});
-document.getElementById('l_code').textContent = code;
-document.getElementById('l_date').textContent = date;  // 🔹 aggiunta data
+    // 🔹 Ricevuta di accettazione
+    document.getElementById('a_sender').textContent = sender;
+    document.getElementById('a_recipient').textContent = recipient;
+    document.getElementById('a_code').textContent = code;
+    document.getElementById('a_date').textContent = date;
 
+    // 🔹 Etichetta con barcode
+    JsBarcode("#barcode", code, {
+        format: "CODE128",
+        width: 2,
+        height: 60,
+        displayValue: false
+    });
+    document.getElementById('l_code').textContent = code;
+    document.getElementById('l_date').textContent = date;
 
-
-    // Ricevuta di ritorno
+    // 🔹 Ricevuta di ritorno
     document.getElementById('r_sender').textContent = sender;
     document.getElementById('r_recipient').textContent = recipient;
     document.getElementById('r_code').textContent = code;
@@ -129,7 +165,7 @@ document.getElementById('l_date').textContent = date;  // 🔹 aggiunta data
 
     document.getElementById('documents').style.display = 'block';
 
-    // Salvataggio nello storico
+    // 🔹 Salvataggio nello storico
     raccomandate.push({ sender, recipient, code, date });
     localStorage.setItem("raccomandate", JSON.stringify(raccomandate));
     mostraStorico();
@@ -137,4 +173,3 @@ document.getElementById('l_date').textContent = date;  // 🔹 aggiunta data
 
 // Mostra storico al caricamento
 mostraStorico();
-
