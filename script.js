@@ -16,92 +16,53 @@ function printSection(id) {
     newWin.print();
 }
 
-// 🔹 Scarica PDF generico (Accettazione, AR)
+// 🔹 Scarica PDF di una sezione (Accettazione, Etichetta, ecc.)
 function downloadPDF(sectionId, fileName) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF("p", "mm", "a4");
 
     const element = document.getElementById(sectionId);
-    element.style.display = "block";
 
-    doc.html(element, {
-        callback: function (doc) {
-            doc.save(fileName + ".pdf");
-        },
-        x: 10,
-        y: 10,
-        width: 180,
-        windowWidth: element.scrollWidth
-    });
-}
-
-// 🔹 Scarica PDF Etichetta con solo barcode e numero
-function downloadLabelPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
-
-    const barcodeSVG = document.getElementById("barcode");
-    const codeText = document.getElementById("l_code").textContent;
-
-    // Converti SVG in canvas e poi in PNG
-    const svgData = new XMLSerializer().serializeToString(barcodeSVG);
-    const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-    img.onload = function() {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-
-        const imgData = canvas.toDataURL("image/png"); 
+    html2canvas(element).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const imgWidth = 190;
         const pageWidth = doc.internal.pageSize.getWidth();
-        const imgWidth = 100; 
-        const imgHeight = 30;
+        const ratio = canvas.width / canvas.height;
+        const imgHeight = imgWidth / ratio;
+
         const x = (pageWidth - imgWidth) / 2;
-        const y = 40;
+        const y = 20;
 
         doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-
-        doc.setFontSize(16);
-        doc.text(codeText, pageWidth / 2, y + imgHeight + 10, { align: "center" });
-
-        doc.save("Etichetta_Raccomandata.pdf");
-        URL.revokeObjectURL(url);
-    };
-    img.src = url;
+        doc.save(fileName + ".pdf");
+    });
 }
 
 // 🔹 Scarica PDF AR con 3 copie sullo stesso foglio A4
 function downloadARPDF() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const doc = new jsPDF("p", "mm", "a4");
 
-    const element = document.getElementById('return');
-    element.style.display = "block";
+    const element = document.getElementById("return");
 
-    const blockHeight = 99;
+    html2canvas(element).then(canvas => {
+        const imgData = canvas.toDataURL("image/png");
+        const imgWidth = 190;
+        const ratio = canvas.width / canvas.height;
+        const imgHeight = imgWidth / ratio;
 
-    for (let i = 0; i < 3; i++) {
-        let offsetY = i * blockHeight;
+        for (let i = 0; i < 3; i++) {
+            let y = 10 + (i * (imgHeight + 5));
+            doc.addImage(imgData, "PNG", 10, y, imgWidth, imgHeight);
 
-        doc.html(element, {
-            callback: function (doc) {
-                if (i === 2) doc.save("Ricevuta_Ritorno.pdf");
-            },
-            x: 10,
-            y: offsetY + 10,
-            width: 180,
-            windowWidth: element.scrollWidth
-        });
-
-        if (i < 2) {
-            doc.setDrawColor(150);
-            doc.line(10, blockHeight * (i + 1), 200, blockHeight * (i + 1));
+            if (i < 2) {
+                doc.setDrawColor(150);
+                doc.line(10, y + imgHeight + 2, 200, y + imgHeight + 2);
+            }
         }
-    }
+
+        doc.save("Ricevuta_Ritorno.pdf");
+    });
 }
 
 // 🔹 Mostra lo storico raccomandate
